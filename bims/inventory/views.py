@@ -8,11 +8,11 @@ from .models import CustomUser
 from django.contrib.auth import login,authenticate,logout
 from django.contrib.auth.tokens import default_token_generator
 from django.core.mail import send_mail
-from rest_framework.authentication import TokenAuthentication  
+from rest_framework_simplejwt.tokens import RefreshToken
 
 
 class UserViewSet(APIView):
-    '''Only admin can add and manage user and send creadentials via mail'''
+    '''Only admin can add and manage user and send creadentials via mail.'''
 
     permission_classes = [IsAdminUser]
 
@@ -57,7 +57,8 @@ class LoginView(APIView):
         
         if user is not None:
             login(request,user)
-            return Response({'message':'Login successfully'},status=status.HTTP_200_OK)
+            refresh = RefreshToken.for_user(user)
+            return Response({'refresh':str(refresh), 'access':str(refresh.access_token), 'message':'Login successfully'},status=status.HTTP_200_OK)
         else:
             return Response({'error':'Invalid email or password, Please enter correct.'},status=status.HTTP_400_BAD_REQUEST)
 
@@ -127,4 +128,4 @@ class LogoutView(APIView):
     
     def post(self, request):
         logout(request)
-        return Response({"message":"Successfully Logged Out!"}, status=status.HTTP_200_OK)        
+        return Response({"message":"Successfully Logged Out!"}, status=status.HTTP_200_OK)
