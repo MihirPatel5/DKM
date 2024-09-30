@@ -2,9 +2,9 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 from django.shortcuts import get_object_or_404
-from .serializers import UserSerializer,ProfileUpdateSerializer,PasswordUpdateSerializer,ProjectSerializer,CategorySerializer,SubCategorySerializer,QuantitySheetSerializer,CostSheetSerializer
+from .serializers import UserSerializer,ProfileUpdateSerializer,PasswordUpdateSerializer,ProjectSerializer,QuantitySheetSerializer,CostSheetSerializer,InventoryItemSerializer
 from rest_framework.permissions import IsAdminUser,IsAuthenticated
-from .models import CustomUser,Project,QuantitySheet,CostSheet
+from .models import CustomUser,Project,QuantitySheet,CostSheet,InventoryItem
 from django.contrib.auth import login,authenticate,logout
 from django.contrib.auth.tokens import default_token_generator
 from django.core.mail import send_mail
@@ -131,14 +131,19 @@ class LogoutView(APIView):
         return Response({"message":"Successfully Logged Out!"}, status=status.HTTP_200_OK)
     
 class ProjectView(APIView):
-    permission_classes =[IsAdminUser] 
+    permission_classes =[IsAuthenticated] 
     
     def get(self,request):
-        projects = Project.objects.all()
+        if request.user.is_superuser:
+            projects = Project.objects.all()
+        else:
+            projects = Project.objects.filter(user=request.user)
         serializer = ProjectSerializer(projects,many=True)
-        return Response(serializer.data, status=status.HTTP_200_OK)\
+        return Response(serializer.data, status=status.HTTP_200_OK)
         
     def post(self,request):
+        if not request.user.is_superuser:
+            return Response({'error': 'You do not have permission to create projects.'}, status=status.HTTP_403_FORBIDDEN)
         serializer = ProjectSerializer(data=request.data)
         if serializer.is_valid():
             serializer.save()
@@ -155,13 +160,15 @@ class ProjectView(APIView):
     
     
     def delete(self, request,pk):
+        if not request.user.is_superuser:
+            return Response({'error': 'You do not have permission to delete projects.'}, status=status.HTTP_403_FORBIDDEN)
         project = get_object_or_404(Project,pk=pk)
         project.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
     
 
 class QuantitySheetView(APIView):
-    # permission_classes = [IsAdminUser]        
+    permission_classes = [IsAuthenticated]        
     
     def get(self,request,project_id):
         quantity_sheets = QuantitySheet.objects.filter(project_id=project_id)
@@ -178,6 +185,8 @@ class QuantitySheetView(APIView):
     # def put(self,request,pk):
     
 class CostSheetView(APIView):
+    permission_classes =[IsAuthenticated]
+    
     def get(self,request,project_id):
         cost_sheets = CostSheet.objects.filter(project_id=project_id)
         serializer = CostSheetSerializer(cost_sheets,many=True)
@@ -187,11 +196,34 @@ class CostSheetView(APIView):
         project = get_object_or_404(Project,id = project_id)
         quantity_sheets = QuantitySheet.objects.filter(project=project)
         
-        total_cost = sum(sheet.value * 100 for sheet in quantity_sheets)
+        total_cost= 0
+        for sheet in quantity_sheets:
+            total_cost += sheet.value * 1.15          
         
         cost_sheet =CostSheet.objects.create(project=project,total_cost=total_cost)
         serializer = CostSheetSerializer(cost_sheet)
         
         return Response(serializer.data,status=status.HTTP_201_CREATED)
     
-    
+
+class InventoryItemView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, project_id):
+        inventory_items = InventoryItem.objects.filter(project_id=project_id)
+        serializer = InventoryItemSerializer(inventory_items, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+    def post(self, request, project_id):
+        if not request.user.is_superuser:
+            return Response({'error': 'You do not have permission to add inventory items.'}, status=status.HTTP_403_FORBIDDEN)
+        
+        data = request.data
+        data['project'] = project_id
+        serializer = InventoryItemSerializer(data=data)
+        
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

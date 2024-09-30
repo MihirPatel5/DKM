@@ -2,7 +2,7 @@ from django.contrib.auth import get_user_model
 from rest_framework import serializers
 from django.utils.crypto import get_random_string
 from django.core.mail import send_mail
-from .models import Project,QuantitySheet,CostSheet,Category,SubCategory
+from .models import Project,QuantitySheet,CostSheet,Category,SubCategory,InventoryItem
 from django.contrib.auth.password_validation import validate_password
 
 User = get_user_model()
@@ -58,10 +58,15 @@ class PasswordUpdateSerializer(serializers.Serializer):
         return user
         
 class ProjectSerializer(serializers.ModelSerializer):
+    user_id = serializers.IntegerField(write_only=True)
     class Meta:
         model =Project
         fields = ['id','name','description','user','creatd_at']
         
+    def create(self,validate_data):
+        user = User.objects.get(id=validate_data.pop('user_id'))
+        project = Project.objects.create(user=user,**validate_data)
+        return project
 
 class CategorySerializer(serializers.ModelSerializer):
     class Meta:
@@ -82,3 +87,9 @@ class CostSheetSerializer(serializers.ModelSerializer):
     class Meta:
         model = CostSheet
         fields = ['id','project','total_cost','created_at']        
+        
+class InventoryItemSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = InventoryItem
+        fields = ['id', 'name', 'quantity', 'price_per_unit', 'total_price']
+        

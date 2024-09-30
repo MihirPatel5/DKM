@@ -2,7 +2,7 @@ from django.contrib.auth.models import AbstractUser
 from django.db import models
 from django.contrib.auth import get_user_model
 
-User = get_user_model()
+
 class CustomUser(AbstractUser):
     email = models.EmailField(unique=True)
     phone_number = models.CharField(max_length=15, blank=True, null=True)
@@ -13,6 +13,7 @@ class CustomUser(AbstractUser):
     def __str__(self):
         return self.email
 
+User = get_user_model()
 class Project(models.Model):
     name = models.CharField(max_length=255)
     description = models.TextField(blank=True,null=True)
@@ -51,5 +52,19 @@ class CostSheet(models.Model):
     
     def __str__(self):
         return f"{self.project.name} - Cost Sheet"
+    
+class InventoryItem(models.Model):
+    project = models.ForeignKey(Project, on_delete=models.CASCADE, related_name="inventory_items")
+    name = models.CharField(max_length=255)
+    quantity = models.IntegerField()
+    price_per_unit = models.DecimalField(max_digits=10, decimal_places=2)
+    
+    def __str__(self):
+        return f"{self.name} - {self.project.name}"
+
+    @property
+    def total_price(self):
+        return self.quantity * self.price_per_unit
+    
     
     
