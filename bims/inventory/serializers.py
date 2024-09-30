@@ -2,6 +2,7 @@ from django.contrib.auth import get_user_model
 from rest_framework import serializers
 from django.utils.crypto import get_random_string
 from django.core.mail import send_mail
+from .models import Project,QuantitySheet,CostSheet,Category,SubCategory
 from django.contrib.auth.password_validation import validate_password
 
 User = get_user_model()
@@ -18,6 +19,7 @@ class UserSerializer(serializers.ModelSerializer):
         user = User(**validated_data)
         password = get_random_string(8)
         user.set_password(password)
+        user.save()
         send_mail(
             subject="Your Login Credentials",
             message=f"Your account has been created.\nUsername: {user.username}\nPassword: {password}",
@@ -34,7 +36,7 @@ class UserUpdateSerializer(serializers.ModelSerializer):
         fields = ['id','email','phonenumber','first_name','last_name','is_active']
         
 
-class ProfileUpadteSerializer(serializers.ModelSerializer):
+class ProfileUpdateSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         field = ['username','email','phone_number','first_name','last_name']
@@ -55,3 +57,28 @@ class PasswordUpdateSerializer(serializers.Serializer):
         user.save()
         return user
         
+class ProjectSerializer(serializers.ModelSerializer):
+    class Meta:
+        model =Project
+        fields = ['id','name','description','user','creatd_at']
+        
+
+class CategorySerializer(serializers.ModelSerializer):
+    class Meta:
+        model =Category
+        fields = ['id','name']
+        
+class SubCategorySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = SubCategory
+        fields = ['id','name','category']
+        
+class QuantitySheetSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = QuantitySheet
+        fields = ['id','project','sub_category','value']
+        
+class CostSheetSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = CostSheet
+        fields = ['id','project','total_cost','created_at']        

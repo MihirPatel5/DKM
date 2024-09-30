@@ -2,9 +2,9 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 from django.shortcuts import get_object_or_404
-from .serializers import UserSerializer,ProfileUpadteSerializer,PasswordUpdateSerializer,UserUpdateSerializer
+from .serializers import UserSerializer,ProfileUpdateSerializer,PasswordUpdateSerializer,ProjectSerializer,CategorySerializer,SubCategorySerializer,QuantitySheetSerializer,CostSheetSerializer
 from rest_framework.permissions import IsAdminUser,IsAuthenticated
-from .models import CustomUser
+from .models import CustomUser,Project,QuantitySheet,CostSheet
 from django.contrib.auth import login,authenticate,logout
 from django.contrib.auth.tokens import default_token_generator
 from django.core.mail import send_mail
@@ -99,12 +99,12 @@ class UserProfileView(APIView):
     
     def get(self,request):
         user = request.user
-        serializer = ProfileUpadteSerializer(user)
+        serializer = ProfileUpdateSerializer(user)
         return Response(serializer.data,status=status.HTTP_200_OK)
     
     def put(self, request):
         user = request.user
-        serializer = ProfileUpadteSerializer(user,data=request.data, partial=True)
+        serializer = ProfileUpdateSerializer(user,data=request.data, partial=True)
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data,status=status.HTTP_200_OK)
@@ -129,3 +129,69 @@ class LogoutView(APIView):
     def post(self, request):
         logout(request)
         return Response({"message":"Successfully Logged Out!"}, status=status.HTTP_200_OK)
+    
+class ProjectView(APIView):
+    permission_classes =[IsAdminUser] 
+    
+    def get(self,request):
+        projects = Project.objects.all()
+        serializer = ProjectSerializer(projects,many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)\
+        
+    def post(self,request):
+        serializer = ProjectSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors,status=status.HTTP_400_BAD_REQUEST)
+    
+    def put(self,request,pk):
+        project = get_object_or_404(Project,pk=pk)
+        serializer = ProjectSerializer(project,data=request.data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data,status=status.HTTP_200_OK)
+        return Response(serializer.errors,status=status.HTTP_400_BAD_REQUEST)
+    
+    
+    def delete(self, request,pk):
+        project = get_object_or_404(Project,pk=pk)
+        project.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
+    
+
+class QuantitySheetView(APIView):
+    # permission_classes = [IsAdminUser]        
+    
+    def get(self,request,project_id):
+        quantity_sheets = QuantitySheet.objects.filter(project_id=project_id)
+        serializer = QuantitySheetSerializer(quantity_sheets,many=True)
+        return Response(serializer.data,status=status.HTTP_200_OK)
+    
+    def post(self,request):
+        serializer = QuantitySheetSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data,status=status.HTTP_201_CREATED)
+        return Response(serializer.errors,status=status.HTTP_404_NOT_FOUND)
+    
+    # def put(self,request,pk):
+    
+class CostSheetView(APIView):
+    def get(self,request,project_id):
+        cost_sheets = CostSheet.objects.filter(project_id=project_id)
+        serializer = CostSheetSerializer(cost_sheets,many=True)
+        return Response(serializer.data,status=status.HTTP_200_OK)
+    
+    def post(self,request,project_id):
+        project = get_object_or_404(Project,id = project_id)
+        quantity_sheets = QuantitySheet.objects.filter(project=project)
+        
+        total_cost = sum(sheet.value * 100 for sheet in quantity_sheets)
+        
+        cost_sheet =CostSheet.objects.create(project=project,total_cost=total_cost)
+        serializer = CostSheetSerializer(cost_sheet)
+        
+        return Response(serializer.data,status=status.HTTP_201_CREATED)
+    
+    
