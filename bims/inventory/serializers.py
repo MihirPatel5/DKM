@@ -39,7 +39,7 @@ class UserUpdateSerializer(serializers.ModelSerializer):
 class ProfileUpdateSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        field = ['username','email','phone_number','first_name','last_name']
+        fields = '__all__'
         
 class PasswordUpdateSerializer(serializers.Serializer):
     old_password = serializers.CharField(write_only=True)

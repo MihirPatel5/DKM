@@ -1,0 +1,80 @@
+{% extends 'base.html' %}
+
+{% block title %}User List{% endblock %}
+
+{% block content %}
+<div class="col-md-12">
+    <h2>Users</h2>
+    <table class="table table-bordered" id="userTable">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Username</th>
+                <th>Email</th>
+            </tr>
+        </thead>
+        <tbody>
+        </tbody>
+    </table>
+
+    <form id="addUserForm">
+        <h3>Add User</h3>
+        <div class="form-group">
+            <label for="username">Username</label>
+            <input type="text" class="form-control" id="username" required>
+        </div>
+        <div class="form-group">
+            <label for="email">Email</label>
+            <input type="email" class="form-control" id="email" required>
+        </div>
+        <div class="form-group">
+            <label for="password">Password</label>
+            <input type="password" class="form-control" id="password" required>
+        </div>
+        <button type="submit" class="btn btn-success">Add User</button>
+    </form>
+
+    <div id="addUserError" class="alert alert-danger mt-2" style="display: none;"></div>
+</div>
+
+<script>
+    // Fetch and display all users on page load
+    function loadUsers() {
+        $.ajax({
+            url: "{% url 'api_users' %}",
+            method: 'GET',
+            success: function(response) {
+                var tbody = $("#userTable tbody");
+                tbody.empty();
+                response.forEach(function(user) {
+                    tbody.append('<tr><td>' + user.id + '</td><td>' + user.username + '</td><td>' + user.email + '</td></tr>');
+                });
+            }
+        });
+    }
+
+    // Handle form submission to add a user
+    $("#addUserForm").on('submit', function(event) {
+        event.preventDefault();
+        $.ajax({
+            url: "{% url 'api_users' %}",
+            method: 'POST',
+            data: {
+                username: $("#username").val(),
+                email: $("#email").val(),
+                password: $("#password").val(),
+            },
+            success: function(response) {
+                loadUsers();
+            },
+            error: function(xhr) {
+                $("#addUserError").text(xhr.responseJSON.error).show();
+            }
+        });
+    });
+
+    $(document).ready(function() {
+        loadUsers();
+    });
+</script>
+{% endblock %}
