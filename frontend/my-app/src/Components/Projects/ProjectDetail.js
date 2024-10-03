@@ -1,7 +1,6 @@
-// src/components/Projects/ProjectDetail.js
 import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
-import { api } from '../api';
+import api from '../../api';  // Import api as default
 
 const ProjectDetail = () => {
   const { id } = useParams();
@@ -26,7 +25,6 @@ const ProjectDetail = () => {
         <div>
           <p>Name: {project.name}</p>
           <p>Description: {project.description}</p>
-          {/* Add more project details as needed */}
         </div>
       ) : (
         <p>Loading...</p>

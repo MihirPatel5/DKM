@@ -1,46 +1,44 @@
 import React, { useState } from 'react';
-import axios from 'axios';
+import { useNavigate } from 'react-router-dom';
+import api from '../../api';
 
 const CreateProject = () => {
     const [name, setName] = useState('');
     const [description, setDescription] = useState('');
-    const [error, setError] = useState('');
-    const [success, setSuccess] = useState('');
+    const navigate = useNavigate();
 
-    const handleSubmit = async (e) => {
+    const handleCreateProject = async (e) => {
         e.preventDefault();
         try {
-            const token = localStorage.getItem('access_token');
-            await axios.post('http://127.0.0.1:8000/projects/', { name, description }, {
-                headers: {
-                    Authorization: `Bearer ${token}`,
-                }
-            });
-            setSuccess('Project created successfully');
+            await api.post('/projects/', { name, description, user_id: localStorage.getItem('user_id') });
+            alert('Project created successfully!');
+            navigate('/projects');
         } catch (error) {
-            setError('Failed to create project');
+            console.error('Error creating project:', error);
         }
     };
 
     return (
-        <div>
+        <div className="container mt-4">
             <h2>Create Project</h2>
-            <form onSubmit={handleSubmit}>
-                <input 
-                    type="text" 
-                    placeholder="Project Name" 
-                    value={name} 
-                    onChange={(e) => setName(e.target.value)} 
+            <form onSubmit={handleCreateProject}>
+                <input
+                    type="text"
+                    placeholder="Project Name"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    required
+                    className="form-control mb-3"
                 />
-                <textarea 
-                    placeholder="Description" 
-                    value={description} 
-                    onChange={(e) => setDescription(e.target.value)} 
+                <textarea
+                    placeholder="Project Description"
+                    value={description}
+                    onChange={(e) => setDescription(e.target.value)}
+                    required
+                    className="form-control mb-3"
                 />
-                <button type="submit">Create</button>
+                <button type="submit" className="btn btn-primary">Create Project</button>
             </form>
-            {error && <p>{error}</p>}
-            {success && <p>{success}</p>}
         </div>
     );
 };

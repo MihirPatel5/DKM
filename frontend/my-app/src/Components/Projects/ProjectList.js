@@ -1,33 +1,30 @@
-import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import React, { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
+import api from '../../api';
 
 const ProjectList = () => {
     const [projects, setProjects] = useState([]);
-    
+
     useEffect(() => {
         const fetchProjects = async () => {
             try {
-                const token = localStorage.getItem('access_token');
-                const response = await axios.get('http://127.0.0.1:8000/projects/', {
-                    headers: {
-                        Authorization: `Bearer ${token}`,
-                    }
-                });
+                const response = await api.get('/projects/');
                 setProjects(response.data);
             } catch (error) {
-                console.error("Error fetching projects:", error);
+                console.error('Error fetching projects:', error);
             }
         };
-        
         fetchProjects();
     }, []);
 
     return (
-        <div>
-            <h2>Projects</h2>
-            <ul>
-                {projects.map(project => (
-                    <li key={project.id}>{project.name}</li>
+        <div className="container mt-4">
+            <h2>Your Projects</h2>
+            <ul className="list-group">
+                {projects.map((project) => (
+                    <li key={project.id} className="list-group-item">
+                        <Link to={`/projects/${project.id}`}>{project.name}</Link>
+                    </li>
                 ))}
             </ul>
         </div>

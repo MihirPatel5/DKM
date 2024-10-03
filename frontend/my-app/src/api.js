@@ -1,6 +1,11 @@
 import axios from 'axios';
 
-axios.interceptors.request.use(
+const api = axios.create({
+    baseURL: 'http://127.0.0.1:8000/',  // Base URL of your Django backend
+});
+
+// Add an interceptor to include the token in requests
+api.interceptors.request.use(
     (config) => {
         const token = localStorage.getItem('access_token');
         if (token) {
@@ -11,4 +16,4 @@ axios.interceptors.request.use(
     (error) => Promise.reject(error)
 );
 
-export default axios;
+export default api;  // Export api as default

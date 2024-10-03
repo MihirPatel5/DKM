@@ -1,33 +1,31 @@
-import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import React, { useEffect, useState } from 'react';
+import { useParams } from 'react-router-dom';
+import api from '../../api';
 
-const InventoryItemList = ({ projectId }) => {
-    const [items, setItems] = useState([]);
+const InventoryItemList = () => {
+    const { project_id } = useParams();
+    const [inventoryItems, setInventoryItems] = useState([]);
 
     useEffect(() => {
         const fetchInventoryItems = async () => {
             try {
-                const token = localStorage.getItem('access_token');
-                const response = await axios.get(`http://127.0.0.1:8000/projects/${projectId}/inventory-items/`, {
-                    headers: {
-                        Authorization: `Bearer ${token}`,
-                    }
-                });
-                setItems(response.data);
+                const response = await api.get(`/projects/${project_id}/inventory-items/`);
+                setInventoryItems(response.data);
             } catch (error) {
-                console.error("Error fetching inventory items:", error);
+                console.error('Error fetching inventory items:', error);
             }
         };
-        
         fetchInventoryItems();
-    }, [projectId]);
+    }, [project_id]);
 
     return (
-        <div>
+        <div className="container mt-4">
             <h2>Inventory Items</h2>
-            <ul>
-                {items.map(item => (
-                    <li key={item.id}>{item.name} - {item.quantity}</li>
+            <ul className="list-group">
+                {inventoryItems.map((item) => (
+                    <li key={item.id} className="list-group-item">
+                        {item.name} - Quantity: {item.quantity}
+                    </li>
                 ))}
             </ul>
         </div>
